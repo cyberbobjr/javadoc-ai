@@ -1,0 +1,16 @@
+# Core dependencies
+PyYAML>=6.0.1
+GitPython>=3.1.40
+
+# LLM dependencies
+langchain>=0.1.0
+langchain-openai>=0.0.2
+pydantic-ai>=0.0.1
+pydantic>=2.5.0
+
+# Additional utilities
+javalang>=0.13.0
+python-dotenv>=1.0.0
+
+# Email support
+secure-smtplib>=0.1.1

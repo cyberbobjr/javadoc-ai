@@ -1,0 +1,87 @@
+# Configuration file for Javadoc AI automation
+# Copy this file to config.yaml and fill in your values
+
+# GitLab Configuration
+gitlab:
+  # GitLab access token with read/write permissions
+  access_token: "YOUR_GITLAB_ACCESS_TOKEN"
+  
+  # Repository URL (SSH or HTTPS)
+  repo_url: "https://gitlab.com/your-org/your-repo.git"
+  
+  # Branch to monitor and document (e.g., "PROD", "main", "master")
+  branch: "PROD"
+  
+  # Local clone directory (will be created if it doesn't exist)
+  clone_dir: "./repo_clone"
+
+# LLM Configuration
+llm:
+  # Provider: "langchain" or "pydantic-ai"
+  provider: "langchain"
+  
+  # Model to use (e.g., "gpt-4", "gpt-3.5-turbo", "claude-2")
+  model: "gpt-4"
+  
+  # API key for the LLM service
+  api_key: "YOUR_LLM_API_KEY"
+  
+  # Temperature for generation (0.0 to 1.0)
+  temperature: 0.3
+  
+  # Maximum tokens for response
+  max_tokens: 1000
+
+# Email Configuration
+email:
+  # SMTP server settings
+  smtp_server: "smtp.gmail.com"
+  smtp_port: 587
+  
+  # Email credentials
+  from_email: "your-email@gmail.com"
+  password: "YOUR_EMAIL_PASSWORD"
+  
+  # Recipients (comma-separated or list)
+  to_emails:
+    - "recipient1@example.com"
+    - "recipient2@example.com"
+  
+  # Email subject template
+  subject_template: "Javadoc Generation Report - {date}"
+
+# Processing Options
+processing:
+  # Exclude test files from documentation
+  exclude_tests: true
+  
+  # File patterns to exclude (glob patterns)
+  exclude_patterns:
+    - "**/test/**"
+    - "**/*Test.java"
+    - "**/*Tests.java"
+  
+  # Maximum number of files to process in one run (0 = unlimited)
+  max_files: 0
+  
+  # Maximum number of methods per file to document in one run (0 = unlimited)
+  max_methods_per_file: 0
+
+# State Management
+state:
+  # File to store state between runs
+  state_file: "./javadoc_state.json"
+  
+  # Enable/disable state tracking
+  enabled: true
+
+# Logging
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO"
+  
+  # Log file path
+  log_file: "./javadoc_automation.log"
+  
+  # Log format
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
