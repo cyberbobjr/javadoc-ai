@@ -1,0 +1,7 @@
+pydantic-ai
+gitpython
+pyyaml
+requests
+python-dotenv
+pytest
+pytest-mock
