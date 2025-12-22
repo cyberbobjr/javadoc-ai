@@ -96,13 +96,13 @@ Generate only the Javadoc content without /** and */ markers.""")
     def _initialize_pydantic_ai(self):
         """Initialize PydanticAI LLM."""
         try:
-            # Note: PydanticAI is a newer library, implementation may vary
-            # This is a placeholder for the actual implementation
-            logger.warning("PydanticAI support is experimental")
-            logger.info("Using LangChain as fallback")
+            # Note: PydanticAI is a newer library with different API
+            # Currently falling back to LangChain for compatibility
+            # TODO: Implement native PydanticAI support when API stabilizes
+            logger.warning("PydanticAI support is not yet implemented, using LangChain")
             self._initialize_langchain()
         except Exception as e:
-            logger.error(f"Failed to initialize PydanticAI: {e}")
+            logger.error(f"Failed to initialize LLM: {e}")
     
     def generate_javadoc(self, element: JavaElement, file_path: str, code_context: str) -> Optional[str]:
         """

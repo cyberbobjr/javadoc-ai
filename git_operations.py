@@ -192,6 +192,8 @@ class GitOperations:
                 return False
             
             # Add all modified Java files
+            # A=True: add all files including untracked
+            # u=True: update tracked files
             self.repo.git.add(A=True, u=True)
             
             # Check if there are changes to commit

@@ -60,11 +60,11 @@ def load_config(config_path: str = 'config.yaml') -> Dict:
             config = yaml.safe_load(f)
         return config
     except FileNotFoundError:
-        print(f"Error: Configuration file '{config_path}' not found.")
-        print("Please copy config.yaml.template to config.yaml and fill in your values.")
+        logging.error(f"Configuration file '{config_path}' not found.")
+        logging.error("Please copy config.yaml.template to config.yaml and fill in your values.")
         sys.exit(1)
     except yaml.YAMLError as e:
-        print(f"Error parsing configuration file: {e}")
+        logging.error(f"Error parsing configuration file: {e}")
         sys.exit(1)
 
 

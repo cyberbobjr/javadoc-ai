@@ -104,8 +104,13 @@ class JavaParser:
             # Extract methods
             for path, node in tree.filter(javalang.tree.MethodDeclaration):
                 javadoc = self._has_javadoc_before_line(lines, node.position.line - 1 if node.position else 0)
-                params = ', '.join([p.type.name + ' ' + p.name for p in (node.parameters or [])])
-                signature = f"{node.return_type.name if node.return_type else 'void'} {node.name}({params})"
+                # Handle complex parameter types safely
+                params = []
+                for p in (node.parameters or []):
+                    param_type = str(p.type) if hasattr(p, 'type') else 'Object'
+                    params.append(f"{param_type} {p.name}")
+                params_str = ', '.join(params)
+                signature = f"{node.return_type.name if node.return_type else 'void'} {node.name}({params_str})"
                 element = JavaElement(
                     element_type='method',
                     name=node.name,

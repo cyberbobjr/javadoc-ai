@@ -59,9 +59,6 @@ else
     echo "config.yaml already exists. Skipping."
 fi
 
-# Make automation script executable
-chmod +x javadoc_automation.py
-
 echo ""
 echo "======================================"
 echo "Setup Complete!"
