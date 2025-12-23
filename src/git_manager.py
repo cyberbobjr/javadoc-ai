@@ -220,12 +220,21 @@ class GitManager:
             # Taking last two parts as namespace/project might work if encoded
             self.config.project_id = f"{parts[-2]}%2F{parts[-1]}"
 
-        api_url = self.config.api_url or "https://gitlab.com/api/v4"
+        if self.config.api_url:
+            api_url = self.config.api_url
+        else:
+             # Auto-detect from repo_url
+             # Example: https://gitlab.company.com/group/repo.git -> https://gitlab.company.com/api/v4
+             from urllib.parse import urlparse
+             parsed = urlparse(self.config.repo_url)
+             api_url = f"{parsed.scheme}://{parsed.netloc}/api/v4"
+             
         url = f"{api_url}/projects/{self.config.project_id}/merge_requests"
         
         headers = {
             "PRIVATE-TOKEN": token
         }
+
         data = {
             "source_branch": branch,
             "target_branch": base,
