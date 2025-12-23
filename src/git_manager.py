@@ -18,17 +18,60 @@ class GitManager:
         try:
             return Repo(self.repo_path)
         except (GitCommandError, Exception) as e:
-            # If repo doesn't exist, we might want to clone it
-            # But for this script, we assume it's running inside or we clone it
-            if not os.path.exists(self.repo_path) and self.config.repo_url:
-                print(f"Cloning {self.config.repo_url} to {self.repo_path}...")
-                return Repo.clone_from(self.config.repo_url, self.repo_path)
-            raise e
+            # Check if directory exists and is empty (or we are allowed to clone into it)
+            # If so, clone the repo
+            if os.path.exists(self.repo_path) and not os.listdir(self.repo_path) and self.config.repo_url:
+                 # It's an empty directory, safe to clone
+                 pass
+            elif not os.path.exists(self.repo_path) and self.config.repo_url:
+                 # Directory doesn't exist, will be created by clone
+                 pass
+            else:
+                # Directory exists and is not empty, and not a git repo
+                # OR no repo_url. Re-raise exception.
+                # Use a specific message error to help debugging
+                if os.path.exists(self.repo_path) and os.listdir(self.repo_path):
+                     raise Exception(f"Directory {self.repo_path} exists, is not empty, and is not a git repository.") from e
+                
+                # If we are here, we probably failed to init a generic path without URL, or obscure error
+                raise e
+
+            print(f"Cloning {self.config.repo_url} to {self.repo_path}...")
+            return Repo.clone_from(self.config.repo_url, self.repo_path)
 
     def pull_prod(self) -> None:
         """Checkout and pull the base branch."""
-        print(f"Checking out {self.config.base_branch}...")
-        self.repo.git.checkout(self.config.base_branch)
+        print("Fetching latest changes...")
+        self.repo.git.fetch()
+
+        branch = self.config.base_branch
+        
+        # Check if branch exists locally or in remote
+        # We can look at remote refs to be sure what exists on origin
+        try:
+            # List remote branches to simplify checking
+            remote_output = self.repo.git.branch("-r")
+            remote_branches = [line.strip().replace("origin/", "").split("->")[0].strip() for line in remote_output.splitlines()]
+            
+            if branch not in remote_branches:
+                print(f"config.base_branch '{branch}' not found in remote branches.")
+                
+                # Check for fallbacks
+                if branch == "master" and "main" in remote_branches:
+                    print("Found 'main', using that instead of 'master'.")
+                    branch = "main"
+                elif branch == "main" and "master" in remote_branches:
+                    print("Found 'master', using that instead of 'main'.")
+                    branch = "master"
+                else:
+                    # If we can't find it and can't fallback, list what we have
+                    raise Exception(f"Branch '{branch}' not found. Remote branches: {remote_branches}")
+        except Exception as e:
+            # If listing fails, we might just try checking out and let it fail naturally or warn
+             print(f"Warning: Could not verify remote branches: {e}")
+
+        print(f"Checking out {branch}...")
+        self.repo.git.checkout(branch)
         print(f"Pulling latest changes...")
         self.repo.git.pull()
 

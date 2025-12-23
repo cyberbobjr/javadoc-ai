@@ -1,5 +1,10 @@
 # Configuration for Javadoc Automation
 
+logging:
+  level: "INFO" # INFO, DEBUG, WARNING, ERROR
+  verbose: false # Ensure to set to true to enable debug logs
+
+
 git:
   repo_url: "https://github.com/your-org/your-repo.git"
   token: "YOUR_GIT_TOKEN"  # Or use env var GIT_TOKEN

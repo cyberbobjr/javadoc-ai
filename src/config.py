@@ -27,11 +27,18 @@ class TeamsConfig(BaseModel):
     enabled: bool = False
     webhook_url: SecretStr
 
+class LoggingConfig(BaseModel):
+    level: str = "INFO"
+    verbose: bool = False
+
+
 class AppConfig(BaseModel):
     git: GitConfig
     llm: LLMConfig
     email: EmailConfig
     teams: TeamsConfig
+    logging: LoggingConfig = LoggingConfig()
+
 
 def load_config(config_path: str = "config.yaml") -> AppConfig:
     """Load configuration from YAML file and environment variables."""
