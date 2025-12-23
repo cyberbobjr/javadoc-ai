@@ -9,6 +9,10 @@ class GitConfig(BaseModel):
     repo_url: str
     token: SecretStr
     base_branch: str = "PROD"
+    provider: str = "github" # github, gitlab
+    project_id: Optional[str] = None # For GitLab or specific API override
+    api_url: Optional[str] = None # For self-hosted instances
+
 
 class LLMConfig(BaseModel):
     api_key: SecretStr

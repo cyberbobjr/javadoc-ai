@@ -2,6 +2,7 @@ import datetime
 import os
 from typing import List
 
+import requests
 from git import GitCommandError, Repo
 
 from .config import GitConfig
@@ -155,3 +156,93 @@ class GitManager:
                 print(f"Failed to push: {e}")
         else:
             print("No changes to commit.")
+
+    def create_merge_request(self, branch_name: str, title: str = "Javadoc Update", body: str = "Automated Javadoc updates.") -> str:
+        """Create a Merge Request/Pull Request."""
+        if not self.config.token:
+            print("No token provided, skipping MR creation.")
+            return None
+
+        token = self.config.token.get_secret_value()
+        base_branch = self.config.base_branch
+        
+        # Determine API interaction based on provider
+        if self.config.provider.lower() == "github":
+            return self._create_github_pr(branch_name, base_branch, title, body, token)
+        elif self.config.provider.lower() == "gitlab":
+            return self._create_gitlab_mr(branch_name, base_branch, title, body, token)
+        else:
+            print(f"Unknown provider {self.config.provider}, skipping MR creation.")
+            return None
+
+    def _create_github_pr(self, branch: str, base: str, title: str, body: str, token: str) -> str:
+        # Extract owner/repo from URL or config
+        # Assumption: repo_url is like https://github.com/owner/repo.git
+        if self.config.project_id:
+            owner_repo = self.config.project_id
+        else:
+            # Simple parse attempt
+            parts = self.config.repo_url.rstrip(".git").split("/")
+            owner_repo = f"{parts[-2]}/{parts[-1]}"
+        
+        api_url = self.config.api_url or "https://api.github.com"
+        url = f"{api_url}/repos/{owner_repo}/pulls"
+        
+        headers = {
+            "Authorization": f"token {token}",
+            "Accept": "application/vnd.github.v3+json"
+        }
+        data = {
+            "title": title,
+            "body": body,
+            "head": branch,
+            "base": base
+        }
+        
+        try:
+            print(f"Creating GitHub PR on {owner_repo}...")
+            response = requests.post(url, json=data, headers=headers)
+            response.raise_for_status()
+            pr_url = response.json().get("html_url")
+            print(f"PR created: {pr_url}")
+            return pr_url
+        except Exception as e:
+            print(f"Failed to create GitHub PR: {e}")
+            if response.text:
+                print(f"Response: {response.text}")
+            return None
+
+    def _create_gitlab_mr(self, branch: str, base: str, title: str, body: str, token: str) -> str:
+        # For GitLab, project_id (int or url-encoded path) is needed
+        if not self.config.project_id:
+             # Try to guess from URL
+            parts = self.config.repo_url.rstrip(".git").split("/")
+            # Taking last two parts as namespace/project might work if encoded
+            self.config.project_id = f"{parts[-2]}%2F{parts[-1]}"
+
+        api_url = self.config.api_url or "https://gitlab.com/api/v4"
+        url = f"{api_url}/projects/{self.config.project_id}/merge_requests"
+        
+        headers = {
+            "PRIVATE-TOKEN": token
+        }
+        data = {
+            "source_branch": branch,
+            "target_branch": base,
+            "title": title,
+            "description": body
+        }
+        
+        try:
+            print(f"Creating GitLab MR for project {self.config.project_id}...")
+            response = requests.post(url, json=data, headers=headers)
+            response.raise_for_status()
+            mr_url = response.json().get("web_url")
+            print(f"MR created: {mr_url}")
+            return mr_url
+        except Exception as e:
+            print(f"Failed to create GitLab MR: {e}")
+            if response.text:
+                print(f"Response: {response.text}")
+            return None
+

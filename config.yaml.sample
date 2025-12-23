@@ -9,6 +9,10 @@ git:
   repo_url: "https://github.com/your-org/your-repo.git"
   token: "YOUR_GIT_TOKEN"  # Or use env var GIT_TOKEN
   base_branch: "PROD"
+  provider: "github" # "github" or "gitlab"
+  # project_id: "owner/repo" # Optional: Explicitly set project ID (for GitLab or overrides)
+  # api_url: "https://gitlab.example.com/api/v4" # Optional: For self-hosted instances
+
 
 llm:
   api_key: "${OPENAI_API_KEY}" # Read from environment variable

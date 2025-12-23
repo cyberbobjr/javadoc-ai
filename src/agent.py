@@ -36,7 +36,8 @@ class JavaDocAgent:
                 "2. Do NOT modify any logic or implementation. Only add comments. "
                 "3. Use standard Javadoc tags (@param, @return, @throws, etc.). "
                 "4. Return the COMPLETE source code with the Javadoc inserted. "
-                "5. Ensure the code is syntactically correct and identical to the input except for the Javadoc."
+                "5. Ensure the code is syntactically correct and identical to the input except for the Javadoc. "
+                "6. IMPORTANT: Do NOT wrap the output in Markdown code blocks (e.g., ```java). Return ONLY the raw Java code."
             )
         )
 
@@ -45,4 +46,15 @@ class JavaDocAgent:
         Generate Javadoc for the given Java file content.
         """
         result = self.agent.run_sync(file_content)
-        return result.output
+        content = result.output
+        
+        # Cleanup Markdown code blocks if present
+        if content.startswith("```java"):
+            content = content[7:]
+        elif content.startswith("```"):
+            content = content[3:]
+            
+        if content.endswith("```"):
+            content = content[:-3]
+            
+        return content.strip()

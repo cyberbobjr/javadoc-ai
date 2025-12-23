@@ -38,7 +38,12 @@ Le fichier `config.yaml` sert de modèle. Vous pouvez configurer les accès via 
 ### Variables d'Environnement
 
 - `GIT_TOKEN` : Token d'accès pour le dépôt Git.
-- `GEMINI_API_KEY` : Clé API pour le modèle LLM.
+- `OPENAI_API_KEY` : Clé API pour le modèle LLM.
+
+### Logging
+
+La verbosité des logs peut être contrôlée via l'argument `--verbose` ou le fichier de configuration.
+L'ordre de priorité est : Argument CLI > Fichier Config > Défaut (INFO).
 
 ### Fichier `config.yaml`
 

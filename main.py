@@ -124,13 +124,25 @@ def main():
             else:
                 logger.info("Dry run: Skipping push.")
 
+            # Auto-Merge Request
+            mr_url = None
+            if not args.dry_run:
+                try:
+                    mr_url = git_manager.create_merge_request(branch_name)
+                except Exception as e:
+                    logger.error(f"Failed to create MR: {e}")
+            
             # Notifications
             summary = (
                 f"Javadoc Automation ran successfully.\n"
                 f"Branch: {branch_name}\n"
                 f"Documented Files: {len(documented_files)}\n"
             )
+            if mr_url:
+                summary += f"Merge Request: {mr_url}\n"
+
             if failed_files:
+
                 summary += f"Failed Files: {len(failed_files)}\n"
                 summary += "\n".join(failed_files)
             
