@@ -33,7 +33,7 @@ def main():
 
     # Set API Key for PydanticAI if provided in config
     if config.llm.api_key:
-        os.environ["GEMINI_API_KEY"] = config.llm.api_key.get_secret_value()
+        os.environ["OPENAI_API_KEY"] = config.llm.api_key.get_secret_value()
         # Also set OPENAI_API_KEY if the model requires it, 
         # but here we assume Gemini or generic usage.
     

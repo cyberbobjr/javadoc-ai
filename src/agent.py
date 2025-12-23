@@ -1,5 +1,6 @@
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.providers.openai import OpenAIProvider
 
 from .config import LLMConfig
 
@@ -15,8 +16,10 @@ class JavaDocAgent:
             # We use OpenAIModel with the provided base_url and api_key
             model = OpenAIModel(
                 self.model_name,
-                base_url=self.llm_config.base_url,
-                api_key=self.llm_config.api_key.get_secret_value() 
+                provider=OpenAIProvider(
+                    base_url=self.llm_config.base_url,
+                    api_key=self.llm_config.api_key.get_secret_value()
+                )
             )
             # Note: For internal LLMs, api_key might be dummy, but we pass it if it's there.
         else:
