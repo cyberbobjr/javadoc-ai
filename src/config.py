@@ -55,9 +55,9 @@ def load_config(config_path: str = "config.yaml") -> AppConfig:
     if "GIT_TOKEN" in os.environ:
         config_data["git"]["token"] = os.environ["GIT_TOKEN"]
     
-    if "GEMINI_API_KEY" in os.environ:
-        config_data["llm"]["api_key"] = os.environ["GEMINI_API_KEY"]
-    elif config_data["llm"]["api_key"] == "${GEMINI_API_KEY}":
+    if "OPENAI_API_KEY" in os.environ:
+        config_data["llm"]["api_key"] = os.environ["OPENAI_API_KEY"]
+    elif config_data["llm"]["api_key"] == "${OPENAI_API_KEY}":
          # If still the placeholder and not in env, this will fail validation if strict,
          # but Pydantic will catch missing fields. 
          # We'll leave it to Pydantic validation to complain if it's not a valid string.

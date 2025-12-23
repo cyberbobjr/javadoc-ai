@@ -45,4 +45,4 @@ class JavaDocAgent:
         Generate Javadoc for the given Java file content.
         """
         result = self.agent.run_sync(file_content)
-        return result.data
+        return result.output
