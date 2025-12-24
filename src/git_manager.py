@@ -1,4 +1,5 @@
 import datetime
+import fnmatch
 import os
 from typing import List
 
@@ -167,7 +168,7 @@ class GitManager:
             # Use git ls-files to get all tracked files
             all_files = self.repo.git.ls_files().splitlines()
             for f in all_files:
-                if f.endswith(".java") and "src/test/" not in f:
+                if f.endswith(".java") and not self._is_excluded(f):
                     modified_files.append(f)
         else:
             print("Daily mode: Checking for changes in the last 24 hours...")
@@ -182,7 +183,7 @@ class GitManager:
                 files = list(set([f for f in files if f]))
                 
                 for f in files:
-                    if f.endswith(".java") and "src/test/" not in f:
+                    if f.endswith(".java") and not self._is_excluded(f):
                          # verify file still exists (it might have been deleted)
                         if os.path.exists(os.path.join(self.repo_path, f)):
                             modified_files.append(f)
@@ -195,6 +196,20 @@ class GitManager:
                 pass
 
         return modified_files
+
+    def _is_excluded(self, file_path: str) -> bool:
+        """Check if file matches any exclusion pattern."""
+        # Check against configured exclusions
+        for pattern in self.config.exclude:
+            if fnmatch.fnmatch(file_path, pattern):
+                return True
+        
+        # We also might want to keep the hardcoded "no tests" logic if user hasn't configured it??
+        # User requested: "on based of a filter PRESENT IN CONFIG.YAML"
+        # So I will ONLY use the config. The User must add src/test if they want it excluded.
+        # BUT, for safety during transition, I will NOT hardcode "src/test/" anymore 
+        # as it might prevent documenting test utilities if desired.
+        return False
 
     def create_branch(self) -> str:
         """Create a new branch for the documentation update."""

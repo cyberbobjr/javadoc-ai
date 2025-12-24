@@ -13,6 +13,7 @@ class GitConfig(BaseModel):
     project_id: Optional[str] = None # For GitLab or specific API override
     api_url: Optional[str] = None # For self-hosted instances
     ssl_verify: Union[bool, str] = True # Path to CA bundle, or bool to enable/disable validation
+    exclude: List[str] = [] # List of glob patterns to exclude (e.g. "src/test/*", "**/*Test.java")
 
 
 class LLMConfig(BaseModel):
