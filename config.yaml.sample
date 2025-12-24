@@ -10,7 +10,7 @@ git:
   token: "YOUR_GIT_TOKEN"  # Or use env var GIT_TOKEN
   base_branch: "PROD"
   provider: "github" # "github" or "gitlab"
-  # project_id: "owner/repo" # Optional: Explicitly set project ID (for GitLab or overrides)
+  project_id: "12345" # REQUIRED for GitLab: Project ID or URL-encoded path (e.g. "group%2Fproject")
   # api_url: "https://gitlab.example.com/api/v4" # Optional: For self-hosted instances
   # ssl_verify: true # Set to false to disable SSL verification, or provide path to CA bundle (e.g. "/path/to/cert.pem")
 

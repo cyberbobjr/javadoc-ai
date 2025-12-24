@@ -13,6 +13,41 @@ class GitManager:
         self.config = config
         self.repo_path = repo_path
         self.repo = self._init_repo()
+        self._validate_config()
+
+    def _validate_config(self) -> None:
+        """Validate configuration, specifically for GitLab."""
+        if self.config.provider.lower() == "gitlab":
+            if not self.config.project_id:
+                raise ValueError("GitLab provider requires 'project_id' to be set in config.yaml.")
+            
+            # Verify project_id existence via API
+            print(f"Validating GitLab project ID: {self.config.project_id}...")
+            
+            if self.config.api_url:
+                api_url = self.config.api_url
+            else:
+                 # Auto-detect from repo_url
+                 from urllib.parse import urlparse
+                 parsed = urlparse(self.config.repo_url)
+                 api_url = f"{parsed.scheme}://{parsed.netloc}/api/v4"
+
+            url = f"{api_url}/projects/{self.config.project_id}"
+            headers = {"PRIVATE-TOKEN": self.config.token.get_secret_value()}
+            
+            try:
+                # Use HEAD or GET just to check existence. GET is safer for info.
+                response = requests.get(url, headers=headers, verify=self.config.ssl_verify)
+                if response.status_code == 404:
+                     raise ValueError(f"GitLab project ID '{self.config.project_id}' not found (404). Check your configuration.")
+                elif response.status_code == 401:
+                     raise PermissionError(f"Unauthorized (401) accessing GitLab project '{self.config.project_id}'. Check your token.")
+                response.raise_for_status()
+                print("GitLab project ID validated successfully.")
+            except requests.RequestException as e:
+                # If we can't reach the server or other error
+                raise ConnectionError(f"Failed to validate GitLab project ID: {e}")
+
 
     def _init_repo(self) -> Repo:
         """Initialize GitPython Repo object."""
@@ -219,23 +254,18 @@ class GitManager:
             return None
 
     def _create_gitlab_mr(self, branch: str, base: str, title: str, body: str, token: str) -> str:
-        # For GitLab, project_id (int or url-encoded path) is needed
-        if not self.config.project_id:
-             # Try to guess from URL
-            parts = self.config.repo_url.rstrip(".git").split("/")
-            # Taking last two parts as namespace/project might work if encoded
-            self.config.project_id = f"{parts[-2]}%2F{parts[-1]}"
-
+        # Strict usage of project_id, validated at startup
+        project_id = self.config.project_id
+        
         if self.config.api_url:
             api_url = self.config.api_url
         else:
              # Auto-detect from repo_url
-             # Example: https://gitlab.company.com/group/repo.git -> https://gitlab.company.com/api/v4
              from urllib.parse import urlparse
              parsed = urlparse(self.config.repo_url)
              api_url = f"{parsed.scheme}://{parsed.netloc}/api/v4"
              
-        url = f"{api_url}/projects/{self.config.project_id}/merge_requests"
+        url = f"{api_url}/projects/{project_id}/merge_requests"
         
         headers = {
             "PRIVATE-TOKEN": token
@@ -249,7 +279,7 @@ class GitManager:
         }
         
         try:
-            print(f"Creating GitLab MR for project {self.config.project_id}...")
+            print(f"Creating GitLab MR for project {project_id}...")
             response = requests.post(url, json=data, headers=headers, verify=self.config.ssl_verify)
             response.raise_for_status()
             mr_url = response.json().get("web_url")
