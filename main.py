@@ -11,6 +11,7 @@ from src.agent import JavaDocAgent
 from src.config import load_config
 from src.git_manager import GitManager
 from src.notifier import Notifier
+from src.progress_manager import ProgressManager
 
 # Configure logging
 # Default to INFO, will change if verbose is set
@@ -23,6 +24,8 @@ def main():
     parser.add_argument("--first-run", action="store_true", help="Run on all files (excluding tests)")
     parser.add_argument("--dry-run", action="store_true", help="Do not push changes")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging (overrides config)")
+    parser.add_argument("--work-dir", default=None, help="Directory to use for the repository (required for resume)")
+    parser.add_argument("--resume", action="store_true", help="Resume from previous run (skips already processed files)")
     args = parser.parse_args()
 
     # Load environment variables
@@ -62,16 +65,26 @@ def main():
         # but here we assume Gemini or generic usage.
     
     # Initialize components
-    temp_dir = tempfile.mkdtemp(prefix="javadoc-ai-repo-")
-    logger.info(f"Using temporary directory: {temp_dir}")
+    if args.work_dir:
+        repo_path = args.work_dir
+        if not os.path.exists(repo_path):
+            os.makedirs(repo_path)
+        logger.info(f"Using persistent working directory: {repo_path}")
+        is_temp_dir = False
+    else:
+        repo_path = tempfile.mkdtemp(prefix="javadoc-ai-repo-")
+        logger.info(f"Using temporary directory: {repo_path}")
+        is_temp_dir = True
 
     try:
-        git_manager = GitManager(config.git, repo_path=temp_dir)
+        git_manager = GitManager(config.git, repo_path=repo_path)
         agent = JavaDocAgent(config.llm)
         notifier = Notifier(config.email, config.teams)
+        progress_manager = ProgressManager(repo_path) if args.resume or args.work_dir else None
     except Exception as e:
         logger.error(f"Initialization failed: {e}")
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        if is_temp_dir:
+            shutil.rmtree(repo_path, ignore_errors=True)
         return
 
     # Git Operations
@@ -93,6 +106,14 @@ def main():
 
         # Process files
         for file_path in modified_files:
+            # Check for resume
+            if args.resume and progress_manager and progress_manager.is_processed(file_path):
+                logger.info(f"Skipping {file_path} (already processed).")
+                documented_files.append(file_path) # Treat as success for reporting purposes if we want to show full scope, or maybe just skip
+                # Actually, for reporting "Documented Files", we might want to distinguish "New" vs "Skipped".
+                # But to keep logic simple for now, we process it.
+                continue
+
             full_path = os.path.join(git_manager.repo_path, file_path)
             logger.info(f"Processing {file_path}...")
             
@@ -108,6 +129,10 @@ def main():
                     f.write(new_content)
                 
                 documented_files.append(file_path)
+                
+                # Update progress
+                if progress_manager:
+                    progress_manager.mark_processed(file_path)
             
             except Exception as e:
                 logger.error(f"Failed to process {file_path}: {e}")
@@ -164,14 +189,17 @@ def main():
         logger.error(f"An unexpected error occurred: {e}")
     finally:
         # Cleanup temp dir if needed. 
-        # CAUTION: If we want to inspect results, we might not want to delete immediately.
-        # But for a pure automation script, we should clean up.
-        if 'temp_dir' in locals() and os.path.exists(temp_dir):
-            if args.dry_run:
-                logger.info(f"Dry run: Keeping temp directory at {temp_dir} for inspection.")
+        if 'repo_path' in locals() and os.path.exists(repo_path):
+            if is_temp_dir:
+                if args.dry_run:
+                     logger.info(f"Dry run: Keeping temp directory at {repo_path} for inspection.")
+                else:
+                    logger.info("Cleaning up temporary directory...")
+                    shutil.rmtree(repo_path, ignore_errors=True)
             else:
-                logger.info("Cleaning up temporary directory...")
-                shutil.rmtree(temp_dir, ignore_errors=True)
+                logger.info("Keeping working directory (user specified).")
+
+
 
 if __name__ == "__main__":
     main()

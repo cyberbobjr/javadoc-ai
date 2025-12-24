@@ -58,7 +58,13 @@ class GitManager:
              os.environ["GIT_SSL_NO_VERIFY"] = "true"
 
         try:
-            return Repo(self.repo_path)
+            repo = Repo(self.repo_path)
+            # If we initialized successfully, check if valid
+            if repo.bare:
+                 # It's bare, maybe we should clone? OR just error? 
+                 # Usually regular repo usage implies non-bare.
+                 pass 
+            return repo
         except (GitCommandError, Exception) as e:
             # Check if directory exists and is empty (or we are allowed to clone into it)
             # If so, clone the repo
@@ -84,10 +90,32 @@ class GitManager:
     def pull_prod(self) -> None:
         """Checkout and pull the base branch."""
         print("Fetching latest changes...")
-        self.repo.git.fetch()
-
+        try:
+            self.repo.git.fetch()
+        except GitCommandError as e:
+            print(f"Fetch warning: {e}")
+            # Continue, maybe we are offline or just need local
+            
         branch = self.config.base_branch
         
+        # Check current branch
+        try:
+            current = self.repo.active_branch.name
+            if current == branch:
+                print(f"Already on {branch}.")
+                # Pull only if not dirty or forced?
+                # User scenario: Resume. 
+                # If we have local changes (documented files from previous run), pulling might cause conflict if we are not careful.
+                # However, if we simply want to ensure we are up to date with REMOTE, we should pull.
+                # BUT, if we have local uncommitted changes from a partial run, pull might fail or merge.
+                # If resuming, we assume the repo is in the state we left it.
+                # So we might skip pull if we have uncommitted changes?
+                if self.repo.is_dirty():
+                     print("Repo is dirty. Skipping pull to preserve work-in-progress.")
+                     return
+        except Exception:
+             pass
+
         # Check if branch exists locally or in remote
         # We can look at remote refs to be sure what exists on origin
         try:
@@ -107,15 +135,24 @@ class GitManager:
                     branch = "master"
                 else:
                     # If we can't find it and can't fallback, list what we have
-                    raise Exception(f"Branch '{branch}' not found. Remote branches: {remote_branches}")
+                    # But if we are local only (network issue fetch failed), we might just try local checkout
+                    if branch in self.repo.heads:
+                         print(f"Branch {branch} exists locally, using it.")
+                    else:
+                         raise Exception(f"Branch '{branch}' not found. Remote branches: {remote_branches}")
         except Exception as e:
             # If listing fails, we might just try checking out and let it fail naturally or warn
              print(f"Warning: Could not verify remote branches: {e}")
-
+ 
         print(f"Checking out {branch}...")
         self.repo.git.checkout(branch)
-        print(f"Pulling latest changes...")
-        self.repo.git.pull()
+        
+        if not self.repo.is_dirty():
+            print(f"Pulling latest changes...")
+            self.repo.git.pull()
+        else:
+             print("Skipping pull due to local changes.")
+
 
     def get_diff_files(self, first_run: bool = False) -> List[str]:
         """
