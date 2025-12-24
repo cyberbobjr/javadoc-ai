@@ -16,6 +16,12 @@ class GitManager:
 
     def _init_repo(self) -> Repo:
         """Initialize GitPython Repo object."""
+        # Configure Git environment for SSL if necessary, before any git operation
+        if isinstance(self.config.ssl_verify, str):
+             os.environ["GIT_SSL_CAINFO"] = self.config.ssl_verify
+        elif self.config.ssl_verify is False:
+             os.environ["GIT_SSL_NO_VERIFY"] = "true"
+
         try:
             return Repo(self.repo_path)
         except (GitCommandError, Exception) as e:
@@ -201,7 +207,7 @@ class GitManager:
         
         try:
             print(f"Creating GitHub PR on {owner_repo}...")
-            response = requests.post(url, json=data, headers=headers)
+            response = requests.post(url, json=data, headers=headers, verify=self.config.ssl_verify)
             response.raise_for_status()
             pr_url = response.json().get("html_url")
             print(f"PR created: {pr_url}")
@@ -244,7 +250,7 @@ class GitManager:
         
         try:
             print(f"Creating GitLab MR for project {self.config.project_id}...")
-            response = requests.post(url, json=data, headers=headers)
+            response = requests.post(url, json=data, headers=headers, verify=self.config.ssl_verify)
             response.raise_for_status()
             mr_url = response.json().get("web_url")
             print(f"MR created: {mr_url}")

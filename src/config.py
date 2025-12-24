@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import yaml
 from pydantic import BaseModel, Field, SecretStr
@@ -12,6 +12,7 @@ class GitConfig(BaseModel):
     provider: str = "github" # github, gitlab
     project_id: Optional[str] = None # For GitLab or specific API override
     api_url: Optional[str] = None # For self-hosted instances
+    ssl_verify: Union[bool, str] = True # Path to CA bundle, or bool to enable/disable validation
 
 
 class LLMConfig(BaseModel):
