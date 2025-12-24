@@ -67,34 +67,55 @@ email:
 teams:
   enabled: true
   webhook_url: "votre_url_webhook"
+### GitLab
+Pour utiliser GitLab :
+1. Définissez `git.provider` sur "gitlab".
+2. Ajoutez `git.project_id` (obligatoire pour GitLab).
+
+```yaml
+git:
+  provider: "gitlab"
+  project_id: "group/project"  # Peut être un ID numérique (12345) ou un chemin encodé
+```
+
+### Exclusions
+
+Vous pouvez exclure des fichiers via `config.yaml` :
+
+```yaml
+git:
+  exclude:
+    - "src/test/**"      # Exclut récursivement le dossier test
+    - "**/*Info.java"    # Exclut par suffixe
 ```
 
 ## Utilisation
 
 Le script `main.py` est le point d'entrée principal.
 
-### Exécution Quotidienne
-
-Pour vérifier et documenter les fichiers modifiés dans les dernières 24 heures :
+### Options de Base
 
 ```bash
+# Exécution standard (diff journalier)
 python main.py
-```
 
-### Première Exécution
-
-Pour scanner et documenter TOUS les fichiers Java du dépôt (à l'exclusion des tests) :
-
-```bash
+# Première exécution (tous les fichiers)
 python main.py --first-run
+
+# Mode simulation (sans push)
+python main.py --dry-run
 ```
 
-### Mode Simulation (Dry Run)
+### Mode Reprise (Resume)
 
-Pour exécuter le processus sans rien pousser sur le dépôt distant (idéal pour tester) :
+En cas d'interruption (ex: panne réseau), vous pouvez reprendre le traitement sans tout recommencer grâce au répertoire de travail persistant.
 
 ```bash
-python main.py --dry-run
+# 1. Utiliser un répertoire de travail persistant
+python main.py --work-dir ./my_cache
+
+# 2. En cas d'erreur, reprendre :
+python main.py --work-dir ./my_cache --resume
 ```
 
 ## Tests
