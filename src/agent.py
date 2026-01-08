@@ -45,6 +45,18 @@ class JavaDocAgent:
         """
         Generate Javadoc for the given Java file content.
         """
+        # Basic pre-check to avoid sending empty or trivial files to LLM
+        # This prevents the LLM from hallucinating conversational responses for "package only" files
+        stripped_content = file_content.strip()
+        if not stripped_content or len(stripped_content) < self.llm_config.min_file_size:
+            # If really short (just package declaration?), skip
+            return file_content
+
+        # If it doesn't contain standard java type definitions, likely not worth documenting or it's a package-info / module-info
+        # We can be deeper here, but for now let's just check for keywords
+        if not any(k in file_content for k in ["class ", "interface ", "enum ", "record "]):
+             return file_content
+
         result = self.agent.run_sync(file_content)
         content = result.output
         

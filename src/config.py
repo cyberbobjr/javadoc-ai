@@ -20,6 +20,7 @@ class LLMConfig(BaseModel):
     api_key: SecretStr
     model_name: str = "gemini-1.5-pro"
     base_url: Optional[str] = None
+    min_file_size: int = 50
 
 class EmailConfig(BaseModel):
     enabled: bool = False

@@ -21,6 +21,7 @@ git:
 llm:
   api_key: "${OPENAI_API_KEY}" # Read from environment variable
   model_name: "gemini-1.5-pro"
+  min_file_size: 50
   base_url: null # Optional: "http://localhost:11434/v1" or similar for internal LLMs
 
 email:
