@@ -104,6 +104,9 @@ python main.py --first-run
 
 # Mode simulation (sans push)
 python main.py --dry-run
+
+# Utiliser un fichier de configuration spécifique
+python main.py --config custom_config.yaml
 ```
 
 ### Mode Reprise (Resume)
